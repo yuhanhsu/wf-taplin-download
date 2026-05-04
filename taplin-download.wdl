@@ -22,7 +22,7 @@ workflow main {
 	call check_raw_file {
 		input:
 			msconvert_image = msconvert_image,
-			sample_id = sample_id
+			sample_id = sample_id,
 			raw_link = raw_link
 	}
 
@@ -118,7 +118,11 @@ task check_raw_file {
 	}
 
 	command <<<
-		
+		if [ "~{raw_link}" = "NA" ]; then
+			echo "Invalid raw file bucket link"
+			exit 1
+		fi	
+	
 		echo "### copy raw file to working directory $PWD"
 		gcloud storage cp ~{raw_link} $PWD
 
