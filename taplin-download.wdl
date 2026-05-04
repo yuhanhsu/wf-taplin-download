@@ -23,7 +23,7 @@ workflow main {
 		input:
 			msconvert_image = msconvert_image,
 			sample_id = sample_id,
-			raw_link = raw_link
+			raw_file = raw_file
 	}
 
 	output {
@@ -64,34 +64,42 @@ task download_taplin_data {
 			gcloud storage cp "${raw_file}" "${raw_link}"
 			#rm "${raw_file}"
 			echo "Uploaded: ${raw_link}"
+		else
+			echo "Missing: ${raw_link}"
 		fi
 
 		echo "### check text files for corruption then upload to final bucket"
 		mzxml_file="~{username}/~{sample_id}/~{sample_id}.mzXML"
 		mzxml_link="NA"
-		if [ -f "${mzxml_file}" ] && [ ! grep -Paq "\x00" "${mzxml_file}" ]; then
+		if [ -f "${mzxml_file}" ] && ! grep -Paq "\x00" "${mzxml_file}"; then
 			mzxml_link="~{final_bucket}/${mzxml_file}"
 			gcloud storage cp "${mzxml_file}" "${mzxml_link}"
 			#rm "${mzxml_file}"
 			echo "Uploaded: ${mzxml_link}"
+		else
+			echo "Missing or corrupted: ${mzxml_link}"
 		fi
 	
 		mzid_file="~{username}/~{sample_id}/~{search_id}_~{sample_id}.mzid"
 		mzid_link="NA"
-		if [ -f "${mzid_file}" ] && [ ! grep -Paq "\x00" "${mzid_file}" ]; then
+		if [ -f "${mzid_file}" ] && ! grep -Paq "\x00" "${mzid_file}"; then
 			mzid_link="~{final_bucket}/${mzid_file}"
 			gcloud storage cp "${mzid_file}" "${mzid_link}"
 			#rm "${mzid_file}" 
 			echo "Uploaded: ${mzid_link}"
+		else
+			echo "Missing or corrupted: ${mzid_link}"
 		fi
 
 		sequest_file="~{username}/~{sample_id}/~{search_id}.sequest.params"
 		sequest_link="NA"
-		if [ -f "${sequest_file}" ] && [ ! grep -Paq "\x00" "${sequest_file}" ]; then
+		if [ -f "${sequest_file}" ] && ! grep -Paq "\x00" "${sequest_file}"; then
 			sequest_link="~{final_bucket}/${sequest_file}"
 			gcloud storage cp "${sequest_file}" "${sequest_link}"
 			#rm "${sequest_file}"
 			echo "Uploaded: ${sequest_link}"
+		else
+			echo "Missing or corrupted: ${sequest_link}"
 		fi
 
 		echo "${raw_link}" > raw.txt
@@ -106,6 +114,7 @@ task download_taplin_data {
 		String mzxml_link = read_string("mzxml.txt")
 		String mzid_link = read_string("mzid.txt")
 		String sequest_link = read_string("sequest.txt")
+		File raw_file = "~{username}/~{sample_id}/~{sample_id}.raw"
 	}
 
 	runtime {
@@ -120,17 +129,13 @@ task check_raw_file {
 	input {
 		String msconvert_image
 		String sample_id
-		String raw_link
+		File raw_file
 	}
 
 	command <<<
-		if [ "~{raw_link}" = "NA" ]; then
-			echo "Invalid raw file bucket link"
-			exit 1
-		fi	
 	
 		echo "### copy raw file to working directory $PWD"
-		gcloud storage cp ~{raw_link} $PWD
+		cp ~{raw_file} $PWD
 
 		echo "### run msconvert"
 		wine msconvert "$PWD/~{sample_id}.raw" > "~{sample_id}.msconvert.log"
