@@ -47,10 +47,10 @@ task download_taplin_data {
 	command <<<
 		echo "### retrieve Taplin server password from Secret Manager"
 		password=$(gcloud secrets versions access latest \
-		--secret="taplin-{username}" --project="lage-genoppi")
+		--secret="taplin-~{username}" --project="lage-genoppi")
 
 		echo "### run Python download script"
-		python downloadTaplinData.py \
+		python /usr/local/src/downloadTaplinData.py \
 		"~{username}" \
 		"${password}" \
 		"~{search_id}" \
