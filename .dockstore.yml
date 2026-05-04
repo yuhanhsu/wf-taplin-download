@@ -5,4 +5,4 @@ workflows:
     primaryDescriptorPath: /taplin-download.wdl
     authors:
       - name: "Yu-Han Hsu"
-        email: "yuhahsu@broadinstitute.org"	
+        email: "yuhahsu@broadinstitute.org"
