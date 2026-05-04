@@ -23,7 +23,7 @@ workflow main {
 		input:
 			msconvert_image = msconvert_image,
 			sample_id = sample_id,
-			raw_file = raw_file
+			raw_file = download_taplin_data.raw_file
 	}
 
 	output {
