@@ -2,26 +2,26 @@ version 1.0
 
 workflow main {
 	input {
-		String download_image = "us-central1-docker.pkg.dev/lage-genoppi/genoppi/taplin-download:2026.05.04"
-		String msconvert_image = "proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses:3.0.26121-ed8dc8a"
+		String download_docker = "us-central1-docker.pkg.dev/lage-genoppi/genoppi/taplin-download:2026.05.04"
+		String msconvert_docker = "proteowizard/pwiz-skyline-i-agree-to-the-vendor-licenses:3.0.26121-ed8dc8a"
 		String username
 		String search_id
 		String sample_id
-		String final_bucket
+		String destination
 	}
 
 	call download_taplin_data {
 		input:
-			download_image = download_image,
+			download_docker = download_docker,
 			username = username,
 			search_id = search_id,
 			sample_id = sample_id,
-			final_bucket = final_bucket
+			destination = destination
 	}
 
 	call check_raw_file {
 		input:
-			msconvert_image = msconvert_image,
+			msconvert_docker = msconvert_docker,
 			sample_id = sample_id,
 			raw_file = download_taplin_data.raw_file
 	}
@@ -37,11 +37,11 @@ workflow main {
 
 task download_taplin_data {
 	input {
-		String download_image
+		String download_docker
 		String username                        
 		String search_id                        
 		String sample_id                        
-		String final_bucket                     
+		String destination                     
 	}
 
 	command <<<
@@ -60,7 +60,7 @@ task download_taplin_data {
 		raw_file="~{username}/~{sample_id}/~{sample_id}.raw"
 		raw_link="NA"
 		if [ -f "${raw_file}" ]; then
-			raw_link="~{final_bucket}/${raw_file}"
+			raw_link="~{destination}/${raw_file}"
 			gcloud storage cp "${raw_file}" "${raw_link}"
 			#rm "${raw_file}"
 			echo "Uploaded: ${raw_link}"
@@ -72,7 +72,7 @@ task download_taplin_data {
 		mzxml_file="~{username}/~{sample_id}/~{sample_id}.mzXML"
 		mzxml_link="NA"
 		if [ -f "${mzxml_file}" ] && ! grep -Paq "\x00" "${mzxml_file}"; then
-			mzxml_link="~{final_bucket}/${mzxml_file}"
+			mzxml_link="~{destination}/${mzxml_file}"
 			gcloud storage cp "${mzxml_file}" "${mzxml_link}"
 			#rm "${mzxml_file}"
 			echo "Uploaded: ${mzxml_link}"
@@ -83,7 +83,7 @@ task download_taplin_data {
 		mzid_file="~{username}/~{sample_id}/~{search_id}_~{sample_id}.mzid"
 		mzid_link="NA"
 		if [ -f "${mzid_file}" ] && ! grep -Paq "\x00" "${mzid_file}"; then
-			mzid_link="~{final_bucket}/${mzid_file}"
+			mzid_link="~{destination}/${mzid_file}"
 			gcloud storage cp "${mzid_file}" "${mzid_link}"
 			#rm "${mzid_file}" 
 			echo "Uploaded: ${mzid_link}"
@@ -94,7 +94,7 @@ task download_taplin_data {
 		sequest_file="~{username}/~{sample_id}/~{search_id}.sequest.params"
 		sequest_link="NA"
 		if [ -f "${sequest_file}" ] && ! grep -Paq "\x00" "${sequest_file}"; then
-			sequest_link="~{final_bucket}/${sequest_file}"
+			sequest_link="~{destination}/${sequest_file}"
 			gcloud storage cp "${sequest_file}" "${sequest_link}"
 			#rm "${sequest_file}"
 			echo "Uploaded: ${sequest_link}"
@@ -118,7 +118,7 @@ task download_taplin_data {
 	}
 
 	runtime {
-		docker: "~{download_image}"
+		docker: "~{download_docker}"
 		memory: "2 GB"
 		cpu: 1
 		preemptible: 1
@@ -127,7 +127,7 @@ task download_taplin_data {
 
 task check_raw_file {
 	input {
-		String msconvert_image
+		String msconvert_docker
 		String sample_id
 		File raw_file
 	}
@@ -141,7 +141,7 @@ task check_raw_file {
 		wine msconvert "$PWD/~{sample_id}.raw" > "~{sample_id}.msconvert.log"
 		
 		echo "### confirm raw file integrity"
-		if grep -q "writing output file"; then	
+		if grep "writing output file" "~{sample_id}.msconvert.log"; then	
 			raw_check="PASS"
 		else
 			raw_check="FAIL"
@@ -151,11 +151,12 @@ task check_raw_file {
 	>>>
 
 	output {
+		File msconvert_log = "~{sample_id}.msconvert.log"
 		String raw_check = read_string("check.txt")
 	}
 	
 	runtime {
-		docker: "~{msconvert_image}"
+		docker: "~{msconvert_docker}"
 		memory: "2 GB"
 		cpu: 1
 		preemptible: 1
