@@ -8,6 +8,9 @@ LABEL maintainer="Yu-Han Hsu <yuhanhsu@broadinstitute.org>"
 # prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
+# install grep with -P (Perl) flag
+RUN apt add --no-cache grep
+
 # install requests
 RUN rm /usr/lib/python3.*/EXTERNALLY-MANAGED \
 	&& pip install --no-cache-dir requests
