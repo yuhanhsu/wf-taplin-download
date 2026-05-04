@@ -138,7 +138,7 @@ task check_raw_file {
 	}
 	
 	runtime {
-		docker: "~{msconvert_image}
+		docker: "~{msconvert_image}"
 		memory: "2 GB"
 		cpu: 1
 		preemptible: 1
