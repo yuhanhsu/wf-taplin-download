@@ -1,0 +1,9 @@
+version: 1.2
+workflows:
+  - name: taplin-download
+    subclass: WDL
+    primaryDescriptorPath: /taplin-download.wdl
+    authors:
+      - name: "Yu-Han Hsu"
+        email: "yuhahsu@broadinstitute.org"
+	
