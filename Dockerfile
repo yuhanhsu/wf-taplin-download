@@ -9,7 +9,7 @@ LABEL maintainer="Yu-Han Hsu <yuhanhsu@broadinstitute.org>"
 ENV DEBIAN_FRONTEND=noninteractive
 
 # install grep with -P (Perl) flag
-RUN apt add --no-cache grep
+RUN apk add --no-cache grep
 
 # install requests
 RUN rm /usr/lib/python3.*/EXTERNALLY-MANAGED \
