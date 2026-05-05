@@ -9,5 +9,7 @@ Files for collecting MS data files from Taplin server
 	2. check integrity of downloaded .raw file using msconvert (separate docker from Docker Hub)
 - .dockstore.yml to sync workflow WDL to Dockstore
 
+Cloud Build run time: <1 minute
+Dockstore run time: a few minutes
 Terra workflow run time: ~15 minutes
 
