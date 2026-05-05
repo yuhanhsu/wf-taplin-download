@@ -132,8 +132,11 @@ task check_raw_file {
 
 	command <<<
 	
+		echo "### copy raw file to working directory $PWD"
+		cp ~{raw_file} $PWD
+		
 		echo "### run msconvert on raw file"
-		wine msconvert "~{sample_id}.raw" > "~{sample_id}.msconvert.log"
+		wine msconvert "$PWD/~{sample_id}.raw" > "~{sample_id}.msconvert.log"
 		
 		echo "### confirm raw file integrity"
 		if grep "writing output file" "~{sample_id}.msconvert.log"; then	
