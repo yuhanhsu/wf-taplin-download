@@ -56,28 +56,26 @@ task download_taplin_data {
 		"~{search_id}" \
 		"~{sample_id}"
 
-		echo "### upload raw file to final bucket"
+		echo "### upload raw file to destination bucket"
 		raw_file="~{username}/~{sample_id}/~{sample_id}.raw"
 		raw_link="NA"
 		if [ -f "${raw_file}" ]; then
 			raw_link="~{destination}/${raw_file}"
 			gcloud storage cp "${raw_file}" "${raw_link}"
-			#rm "${raw_file}"
 			echo "Uploaded: ${raw_link}"
 		else
-			echo "Missing: ${raw_link}"
+			echo "Missing: ${raw_file}"
 		fi
 
-		echo "### check text files for corruption then upload to final bucket"
+		echo "### check text files for corruption then upload to destination bucket"
 		mzxml_file="~{username}/~{sample_id}/~{sample_id}.mzXML"
 		mzxml_link="NA"
 		if [ -f "${mzxml_file}" ] && ! grep -Paq "\x00" "${mzxml_file}"; then
 			mzxml_link="~{destination}/${mzxml_file}"
 			gcloud storage cp "${mzxml_file}" "${mzxml_link}"
-			#rm "${mzxml_file}"
 			echo "Uploaded: ${mzxml_link}"
 		else
-			echo "Missing or corrupted: ${mzxml_link}"
+			echo "Missing or corrupted: ${mzxml_file}"
 		fi
 	
 		mzid_file="~{username}/~{sample_id}/~{search_id}_~{sample_id}.mzid"
@@ -85,10 +83,9 @@ task download_taplin_data {
 		if [ -f "${mzid_file}" ] && ! grep -Paq "\x00" "${mzid_file}"; then
 			mzid_link="~{destination}/${mzid_file}"
 			gcloud storage cp "${mzid_file}" "${mzid_link}"
-			#rm "${mzid_file}" 
 			echo "Uploaded: ${mzid_link}"
 		else
-			echo "Missing or corrupted: ${mzid_link}"
+			echo "Missing or corrupted: ${mzid_file}"
 		fi
 
 		sequest_file="~{username}/~{sample_id}/~{search_id}.sequest.params"
@@ -96,10 +93,9 @@ task download_taplin_data {
 		if [ -f "${sequest_file}" ] && ! grep -Paq "\x00" "${sequest_file}"; then
 			sequest_link="~{destination}/${sequest_file}"
 			gcloud storage cp "${sequest_file}" "${sequest_link}"
-			#rm "${sequest_file}"
 			echo "Uploaded: ${sequest_link}"
 		else
-			echo "Missing or corrupted: ${sequest_link}"
+			echo "Missing or corrupted: ${sequest_file}"
 		fi
 
 		echo "${raw_link}" > raw.txt
@@ -114,6 +110,8 @@ task download_taplin_data {
 		String mzxml_link = read_string("mzxml.txt")
 		String mzid_link = read_string("mzid.txt")
 		String sequest_link = read_string("sequest.txt")
+		
+		# intermediate file
 		File raw_file = "~{username}/~{sample_id}/~{sample_id}.raw"
 	}
 
@@ -134,11 +132,8 @@ task check_raw_file {
 
 	command <<<
 	
-		echo "### copy raw file to working directory $PWD"
-		cp ~{raw_file} $PWD
-
-		echo "### run msconvert"
-		wine msconvert "$PWD/~{sample_id}.raw" > "~{sample_id}.msconvert.log"
+		echo "### run msconvert on raw file"
+		wine msconvert "~{sample_id}.raw" > "~{sample_id}.msconvert.log"
 		
 		echo "### confirm raw file integrity"
 		if grep "writing output file" "~{sample_id}.msconvert.log"; then	
@@ -151,7 +146,6 @@ task check_raw_file {
 	>>>
 
 	output {
-		File msconvert_log = "~{sample_id}.msconvert.log"
 		String raw_check = read_string("check.txt")
 	}
 	
